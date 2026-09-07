@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user["name"] }} — Spendly{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<section class="profile-section">
+
+    <div class="profile-header">
+        <p class="profile-eyebrow">Account</p>
+        <h1 class="profile-title">{{ user["name"] }}</h1>
+        <p class="profile-subtitle">{{ user["email"] }}</p>
+    </div>
+
+    <div class="profile-grid">
+
+        <div class="profile-card">
+            <h2 class="profile-card-title"><i data-lucide="user"></i> Account details</h2>
+            <dl class="profile-info-list">
+                <div class="profile-info-row">
+                    <dt>Name</dt>
+                    <dd>{{ user["name"] }}</dd>
+                </div>
+                <div class="profile-info-row">
+                    <dt>Email</dt>
+                    <dd>{{ user["email"] }}</dd>
+                </div>
+                <div class="profile-info-row">
+                    <dt>Member since</dt>
+                    <dd>{{ member_since }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="profile-stats-row">
+            <div class="profile-card profile-stat-card">
+                <i data-lucide="wallet" class="profile-stat-icon"></i>
+                <p class="profile-stat-label">Total spent</p>
+                <p class="profile-stat-value">₹{{ "%.2f"|format(total_spent) }}</p>
+            </div>
+            <div class="profile-card profile-stat-card">
+                <i data-lucide="receipt" class="profile-stat-icon"></i>
+                <p class="profile-stat-label">Transactions</p>
+                <p class="profile-stat-value">{{ transaction_count }}</p>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <h2 class="profile-card-title"><i data-lucide="pie-chart"></i> Category breakdown</h2>
+            {% if category_breakdown %}
+            <div class="profile-bars">
+                {% for cat in category_breakdown %}
+                <div class="profile-bar-row">
+                    <span class="profile-cat">{{ cat["category"] }}</span>
+                    <div class="profile-bar-track">
+                        <div class="profile-bar" style="width: {{ (cat['total'] / category_breakdown[0]['total'] * 100)|round(1) }}%"></div>
+                    </div>
+                    <span class="profile-amt">₹{{ "%.2f"|format(cat["total"]) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="profile-empty">No expenses yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}
