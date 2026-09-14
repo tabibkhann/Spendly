@@ -136,6 +136,49 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Recent transactions                                                 */
+/* ------------------------------------------------------------------ */
+
+.profile-tx-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-tx-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 110px 90px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.profile-tx-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.profile-tx-date,
+.profile-tx-cat {
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+}
+
+.profile-tx-desc {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.profile-tx-amt {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
 /* Category breakdown                                                  */
 /* ------------------------------------------------------------------ */
 
@@ -209,5 +252,14 @@
     .profile-bar-row {
         grid-template-columns: 70px 1fr 70px;
         gap: 0.5rem;
+    }
+
+    .profile-tx-row {
+        grid-template-columns: 70px 1fr 70px;
+        gap: 0.5rem;
+    }
+
+    .profile-tx-cat {
+        display: none;
     }
 }

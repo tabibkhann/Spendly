@@ -1,11 +1,16 @@
 import sqlite3
-from datetime import datetime
 from functools import wraps
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import get_db, init_db, seed_db
+from database.queries import (
+    get_category_breakdown,
+    get_recent_transactions,
+    get_summary_stats,
+    get_user_by_id,
+)
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-in-production"  # replace with env var in production
@@ -111,41 +116,22 @@ def logout():
 @app.route("/profile")
 @login_required
 def profile():
-    conn = get_db()
-
-    user = conn.execute(
-        "SELECT id, name, email, created_at FROM users WHERE id = ?",
-        (session["user_id"],),
-    ).fetchone()
+    user = get_user_by_id(session["user_id"])
 
     if user is None:
-        conn.close()
         session.clear()
         return redirect(url_for("login"))
 
-    totals = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) AS total_spent, COUNT(*) AS transaction_count "
-        "FROM expenses WHERE user_id = ?",
-        (session["user_id"],),
-    ).fetchone()
-
-    category_breakdown = conn.execute(
-        "SELECT category, SUM(amount) AS total FROM expenses "
-        "WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-        (session["user_id"],),
-    ).fetchall()
-
-    conn.close()
-
-    member_since = datetime.strptime(user["created_at"], "%Y-%m-%d %H:%M:%S").strftime("%B %Y")
+    stats = get_summary_stats(session["user_id"])
 
     return render_template(
         "profile.html",
         user=user,
-        member_since=member_since,
-        total_spent=totals["total_spent"],
-        transaction_count=totals["transaction_count"],
-        category_breakdown=category_breakdown,
+        total_spent=stats["total_spent"],
+        transaction_count=stats["transaction_count"],
+        top_category=stats["top_category"],
+        recent_transactions=get_recent_transactions(session["user_id"]),
+        category_breakdown=get_category_breakdown(session["user_id"]),
     )
 
 

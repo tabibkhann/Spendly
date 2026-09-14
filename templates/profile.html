@@ -31,7 +31,7 @@
                 </div>
                 <div class="profile-info-row">
                     <dt>Member since</dt>
-                    <dd>{{ member_since }}</dd>
+                    <dd>{{ user["member_since"] }}</dd>
                 </div>
             </dl>
         </div>
@@ -50,16 +50,34 @@
         </div>
 
         <div class="profile-card">
+            <h2 class="profile-card-title"><i data-lucide="list"></i> Recent transactions</h2>
+            {% if recent_transactions %}
+            <div class="profile-tx-list">
+                {% for tx in recent_transactions %}
+                <div class="profile-tx-row">
+                    <span class="profile-tx-date">{{ tx["date"] }}</span>
+                    <span class="profile-tx-desc">{{ tx["description"] }}</span>
+                    <span class="profile-tx-cat">{{ tx["category"] }}</span>
+                    <span class="profile-tx-amt">₹{{ "%.2f"|format(tx["amount"]) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="profile-empty">No expenses yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="profile-card">
             <h2 class="profile-card-title"><i data-lucide="pie-chart"></i> Category breakdown</h2>
             {% if category_breakdown %}
             <div class="profile-bars">
                 {% for cat in category_breakdown %}
                 <div class="profile-bar-row">
-                    <span class="profile-cat">{{ cat["category"] }}</span>
+                    <span class="profile-cat">{{ cat["name"] }}</span>
                     <div class="profile-bar-track">
-                        <div class="profile-bar" style="width: {{ (cat['total'] / category_breakdown[0]['total'] * 100)|round(1) }}%"></div>
+                        <div class="profile-bar" style="width: {{ cat['pct'] }}%"></div>
                     </div>
-                    <span class="profile-amt">₹{{ "%.2f"|format(cat["total"]) }}</span>
+                    <span class="profile-amt">₹{{ "%.2f"|format(cat["amount"]) }}</span>
                 </div>
                 {% endfor %}
             </div>
