@@ -66,6 +66,33 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Filter bar                                                          */
+/* ------------------------------------------------------------------ */
+
+.profile-filter-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+}
+
+.profile-filter-bar .form-group {
+    margin-bottom: 0;
+    flex: 1 1 160px;
+    min-width: 140px;
+}
+
+.profile-filter-bar .btn-submit {
+    width: auto;
+    flex: 0 0 auto;
+    padding: 0.6rem 1.75rem;
+}
+
+/* ------------------------------------------------------------------ */
 /* Account info                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -261,5 +288,15 @@
 
     .profile-tx-cat {
         display: none;
+    }
+
+    .profile-filter-bar {
+        padding: 1.25rem 1.5rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-filter-bar .btn-submit {
+        width: 100%;
     }
 }
