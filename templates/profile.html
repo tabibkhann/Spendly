@@ -36,6 +36,28 @@
             </dl>
         </div>
 
+        <form method="GET" class="profile-filter-bar">
+            <div class="form-group">
+                <label for="range">Date range</label>
+                <select id="range" name="range" class="form-input">
+                    <option value="all" {% if selected_range == "all" %}selected{% endif %}>All time</option>
+                    <option value="this-month" {% if selected_range == "this-month" %}selected{% endif %}>This month</option>
+                    <option value="last-month" {% if selected_range == "last-month" %}selected{% endif %}>Last month</option>
+                    <option value="last-30-days" {% if selected_range == "last-30-days" %}selected{% endif %}>Last 30 days</option>
+                    <option value="custom" {% if selected_range == "custom" %}selected{% endif %}>Custom range</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="start">Start date</label>
+                <input type="date" id="start" name="start" class="form-input" value="{{ start_value }}">
+            </div>
+            <div class="form-group">
+                <label for="end">End date</label>
+                <input type="date" id="end" name="end" class="form-input" value="{{ end_value }}">
+            </div>
+            <button type="submit" class="btn-submit">Apply</button>
+        </form>
+
         <div class="profile-stats-row">
             <div class="profile-card profile-stat-card">
                 <i data-lucide="wallet" class="profile-stat-icon"></i>

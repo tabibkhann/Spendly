@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date, datetime, timedelta
 from functools import wraps
 
 from flask import Flask, redirect, render_template, request, session, url_for
@@ -27,6 +28,36 @@ def login_required(view):
             return redirect(url_for("login"))
         return view(*args, **kwargs)
     return wrapped_view
+
+
+def resolve_date_range(range_value, start_arg, end_arg):
+    """Returns (normalized_range_value, start_date, end_date) — the normalized
+    range value is the single source of truth for which option is actually
+    selected, so callers never need a second, separately maintained check."""
+    today = date.today()
+
+    if range_value == "this-month":
+        return "this-month", today.replace(day=1).isoformat(), today.isoformat()
+
+    if range_value == "last-month":
+        first_of_this_month = today.replace(day=1)
+        last_of_last_month = first_of_this_month - timedelta(days=1)
+        return "last-month", last_of_last_month.replace(day=1).isoformat(), last_of_last_month.isoformat()
+
+    if range_value == "last-30-days":
+        return "last-30-days", (today - timedelta(days=29)).isoformat(), today.isoformat()
+
+    if range_value == "custom":
+        try:
+            start = datetime.strptime(start_arg, "%Y-%m-%d").date()
+            end = datetime.strptime(end_arg, "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            return "all", None, None
+        if start > end:
+            return "all", None, None
+        return "custom", start.isoformat(), end.isoformat()
+
+    return "all", None, None  # "all", missing, or unrecognized
 
 
 # ------------------------------------------------------------------ #
@@ -122,7 +153,13 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
-    stats = get_summary_stats(session["user_id"])
+    range_arg = request.args.get("range", "all")
+    start_arg = request.args.get("start")
+    end_arg = request.args.get("end")
+
+    range_value, start_date, end_date = resolve_date_range(range_arg, start_arg, end_arg)
+
+    stats = get_summary_stats(session["user_id"], start_date, end_date)
 
     return render_template(
         "profile.html",
@@ -130,8 +167,11 @@ def profile():
         total_spent=stats["total_spent"],
         transaction_count=stats["transaction_count"],
         top_category=stats["top_category"],
-        recent_transactions=get_recent_transactions(session["user_id"]),
-        category_breakdown=get_category_breakdown(session["user_id"]),
+        recent_transactions=get_recent_transactions(session["user_id"], start_date=start_date, end_date=end_date),
+        category_breakdown=get_category_breakdown(session["user_id"], start_date, end_date),
+        selected_range=range_value,
+        start_value=start_date if range_value == "custom" else "",
+        end_value=end_date if range_value == "custom" else "",
     )
 
 
