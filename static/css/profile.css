@@ -31,6 +31,14 @@
     margin-bottom: 2.5rem;
 }
 
+.profile-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
 /* ------------------------------------------------------------------ */
 /* Grid & cards                                                        */
 /* ------------------------------------------------------------------ */

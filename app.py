@@ -11,10 +11,13 @@ from database.queries import (
     get_recent_transactions,
     get_summary_stats,
     get_user_by_id,
+    insert_expense,
 )
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-in-production"  # replace with env var in production
+
+EXPENSE_CATEGORIES = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
 
 with app.app_context():
     init_db()
@@ -175,9 +178,39 @@ def profile():
     )
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
+@login_required
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if request.method == "GET":
+        form = {"amount": "", "category": "", "date": date.today().isoformat(), "description": ""}
+        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form)
+
+    amount_raw = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    date_raw = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip()
+    form = {"amount": amount_raw, "category": category, "date": date_raw, "description": description}
+
+    try:
+        amount = float(amount_raw)
+    except (TypeError, ValueError):
+        amount = None
+    if amount is None or not (amount > 0):
+        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form,
+                                error="Enter a valid amount greater than zero.")
+
+    if category not in EXPENSE_CATEGORIES:
+        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form,
+                                error="Select a valid category.")
+
+    try:
+        datetime.strptime(date_raw, "%Y-%m-%d")
+    except (TypeError, ValueError):
+        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form,
+                                error="Enter a valid date.")
+
+    insert_expense(session["user_id"], amount, category, date_raw, description or None)
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/edit")
