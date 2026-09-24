@@ -181,7 +181,7 @@
 
 .profile-tx-row {
     display: grid;
-    grid-template-columns: 90px 1fr 110px 90px;
+    grid-template-columns: 90px 1fr 110px 90px 28px;
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 0;
@@ -211,6 +211,22 @@
     color: var(--ink);
     text-align: right;
     font-variant-numeric: tabular-nums;
+}
+
+.profile-tx-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-muted);
+}
+
+.profile-tx-edit:hover {
+    color: var(--accent);
+}
+
+.profile-tx-edit i {
+    width: 16px;
+    height: 16px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -290,7 +306,7 @@
     }
 
     .profile-tx-row {
-        grid-template-columns: 70px 1fr 70px;
+        grid-template-columns: 70px 1fr 70px 24px;
         gap: 0.5rem;
     }
 

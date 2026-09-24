@@ -8,16 +8,28 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from database.db import get_db, init_db, seed_db
 from database.queries import (
     get_category_breakdown,
+    get_expense_by_id,
     get_recent_transactions,
     get_summary_stats,
     get_user_by_id,
     insert_expense,
+    update_expense,
 )
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key-change-in-production"  # replace with env var in production
+app.secret_key = (
+    "dev-secret-key-change-in-production"  # replace with env var in production
+)
 
-EXPENSE_CATEGORIES = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+EXPENSE_CATEGORIES = [
+    "Food",
+    "Transport",
+    "Bills",
+    "Health",
+    "Entertainment",
+    "Shopping",
+    "Other",
+]
 
 with app.app_context():
     init_db()
@@ -30,6 +42,7 @@ def login_required(view):
         if session.get("user_id") is None:
             return redirect(url_for("login"))
         return view(*args, **kwargs)
+
     return wrapped_view
 
 
@@ -45,10 +58,18 @@ def resolve_date_range(range_value, start_arg, end_arg):
     if range_value == "last-month":
         first_of_this_month = today.replace(day=1)
         last_of_last_month = first_of_this_month - timedelta(days=1)
-        return "last-month", last_of_last_month.replace(day=1).isoformat(), last_of_last_month.isoformat()
+        return (
+            "last-month",
+            last_of_last_month.replace(day=1).isoformat(),
+            last_of_last_month.isoformat(),
+        )
 
     if range_value == "last-30-days":
-        return "last-30-days", (today - timedelta(days=29)).isoformat(), today.isoformat()
+        return (
+            "last-30-days",
+            (today - timedelta(days=29)).isoformat(),
+            today.isoformat(),
+        )
 
     if range_value == "custom":
         try:
@@ -67,6 +88,7 @@ def resolve_date_range(range_value, start_arg, end_arg):
 # Routes                                                              #
 # ------------------------------------------------------------------ #
 
+
 @app.route("/")
 def landing():
     return render_template("landing.html")
@@ -77,10 +99,10 @@ def register():
     if request.method == "GET":
         return render_template("register.html")
 
-    name     = request.form.get("name", "").strip()
-    email    = request.form.get("email", "").strip()
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
     password = request.form.get("password", "")
-    confirm  = request.form.get("confirm_password", "")
+    confirm = request.form.get("confirm_password", "")
 
     if not name or not email or not password or not confirm:
         return render_template("register.html", error="All fields are required.")
@@ -95,7 +117,9 @@ def register():
         )
         conn.commit()
     except sqlite3.IntegrityError:
-        return render_template("register.html", error="An account with that email already exists.")
+        return render_template(
+            "register.html", error="An account with that email already exists."
+        )
     finally:
         conn.close()
 
@@ -107,7 +131,7 @@ def login():
     if request.method == "GET":
         return render_template("login.html")
 
-    email    = request.form.get("email", "").strip()
+    email = request.form.get("email", "").strip()
     password = request.form.get("password", "")
 
     if not email or not password:
@@ -122,7 +146,7 @@ def login():
     if user is None or not check_password_hash(user["password_hash"], password):
         return render_template("login.html", error="Invalid email or password.")
 
-    session["user_id"]   = user["id"]
+    session["user_id"] = user["id"]
     session["user_name"] = user["name"]
     return redirect(url_for("profile"))
 
@@ -130,6 +154,7 @@ def login():
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
+
 
 @app.route("/terms")
 def terms():
@@ -160,7 +185,9 @@ def profile():
     start_arg = request.args.get("start")
     end_arg = request.args.get("end")
 
-    range_value, start_date, end_date = resolve_date_range(range_arg, start_arg, end_arg)
+    range_value, start_date, end_date = resolve_date_range(
+        range_arg, start_arg, end_arg
+    )
 
     stats = get_summary_stats(session["user_id"], start_date, end_date)
 
@@ -170,8 +197,12 @@ def profile():
         total_spent=stats["total_spent"],
         transaction_count=stats["transaction_count"],
         top_category=stats["top_category"],
-        recent_transactions=get_recent_transactions(session["user_id"], start_date=start_date, end_date=end_date),
-        category_breakdown=get_category_breakdown(session["user_id"], start_date, end_date),
+        recent_transactions=get_recent_transactions(
+            session["user_id"], start_date=start_date, end_date=end_date
+        ),
+        category_breakdown=get_category_breakdown(
+            session["user_id"], start_date, end_date
+        ),
         selected_range=range_value,
         start_value=start_date if range_value == "custom" else "",
         end_value=end_date if range_value == "custom" else "",
@@ -182,40 +213,127 @@ def profile():
 @login_required
 def add_expense():
     if request.method == "GET":
-        form = {"amount": "", "category": "", "date": date.today().isoformat(), "description": ""}
-        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form)
+        form = {
+            "amount": "",
+            "category": "",
+            "date": date.today().isoformat(),
+            "description": "",
+        }
+        return render_template(
+            "add_expense.html", categories=EXPENSE_CATEGORIES, form=form
+        )
 
     amount_raw = request.form.get("amount", "").strip()
     category = request.form.get("category", "").strip()
     date_raw = request.form.get("date", "").strip()
     description = request.form.get("description", "").strip()
-    form = {"amount": amount_raw, "category": category, "date": date_raw, "description": description}
+    form = {
+        "amount": amount_raw,
+        "category": category,
+        "date": date_raw,
+        "description": description,
+    }
 
     try:
         amount = float(amount_raw)
     except (TypeError, ValueError):
         amount = None
     if amount is None or not (amount > 0):
-        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form,
-                                error="Enter a valid amount greater than zero.")
+        return render_template(
+            "add_expense.html",
+            categories=EXPENSE_CATEGORIES,
+            form=form,
+            error="Enter a valid amount greater than zero.",
+        )
 
     if category not in EXPENSE_CATEGORIES:
-        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form,
-                                error="Select a valid category.")
+        return render_template(
+            "add_expense.html",
+            categories=EXPENSE_CATEGORIES,
+            form=form,
+            error="Select a valid category.",
+        )
 
     try:
         datetime.strptime(date_raw, "%Y-%m-%d")
     except (TypeError, ValueError):
-        return render_template("add_expense.html", categories=EXPENSE_CATEGORIES, form=form,
-                                error="Enter a valid date.")
+        return render_template(
+            "add_expense.html",
+            categories=EXPENSE_CATEGORIES,
+            form=form,
+            error="Enter a valid date.",
+        )
 
     insert_expense(session["user_id"], amount, category, date_raw, description or None)
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
+@login_required
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        return redirect(url_for("profile"))
+
+    if request.method == "GET":
+        form = {
+            "amount": str(expense["amount"]),
+            "category": expense["category"],
+            "date": expense["date"],
+            "description": expense["description"] or "",
+        }
+        return render_template(
+            "edit_expense.html", categories=EXPENSE_CATEGORIES, form=form, expense_id=id
+        )
+
+    amount_raw = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    date_raw = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip()
+    form = {
+        "amount": amount_raw,
+        "category": category,
+        "date": date_raw,
+        "description": description,
+    }
+
+    try:
+        amount = float(amount_raw)
+    except (TypeError, ValueError):
+        amount = None
+    if amount is None or not (amount > 0):
+        return render_template(
+            "edit_expense.html",
+            categories=EXPENSE_CATEGORIES,
+            form=form,
+            expense_id=id,
+            error="Enter a valid amount greater than zero.",
+        )
+
+    if category not in EXPENSE_CATEGORIES:
+        return render_template(
+            "edit_expense.html",
+            categories=EXPENSE_CATEGORIES,
+            form=form,
+            expense_id=id,
+            error="Select a valid category.",
+        )
+
+    try:
+        datetime.strptime(date_raw, "%Y-%m-%d")
+    except (TypeError, ValueError):
+        return render_template(
+            "edit_expense.html",
+            categories=EXPENSE_CATEGORIES,
+            form=form,
+            expense_id=id,
+            error="Enter a valid date.",
+        )
+
+    update_expense(
+        id, session["user_id"], amount, category, date_raw, description or None
+    )
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/delete")
