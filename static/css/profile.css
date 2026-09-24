@@ -181,7 +181,7 @@
 
 .profile-tx-row {
     display: grid;
-    grid-template-columns: 90px 1fr 110px 90px 28px;
+    grid-template-columns: 90px 1fr 110px 90px 28px 28px;
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 0;
@@ -225,6 +225,31 @@
 }
 
 .profile-tx-edit i {
+    width: 16px;
+    height: 16px;
+}
+
+.profile-tx-delete-form {
+    display: flex;
+}
+
+.profile-tx-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    color: var(--ink-muted);
+}
+
+.profile-tx-delete:hover {
+    color: var(--danger);
+}
+
+.profile-tx-delete i {
     width: 16px;
     height: 16px;
 }
@@ -306,7 +331,7 @@
     }
 
     .profile-tx-row {
-        grid-template-columns: 70px 1fr 70px 24px;
+        grid-template-columns: 70px 1fr 70px 24px 24px;
         gap: 0.5rem;
     }
 
