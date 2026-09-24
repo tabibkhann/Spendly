@@ -20,7 +20,9 @@ def get_user_by_id(user_id):
     if row is None:
         return None
 
-    member_since = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S").strftime("%B %Y")
+    member_since = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S").strftime(
+        "%B %Y"
+    )
     return {
         "id": row["id"],
         "name": row["name"],
@@ -60,7 +62,7 @@ def get_recent_transactions(user_id, limit=10, *, start_date=None, end_date=None
     conn = get_db()
     clause, extra = _date_filter_clause(start_date, end_date)
     rows = conn.execute(
-        "SELECT date, description, category, amount FROM expenses "
+        "SELECT id, date, description, category, amount FROM expenses "
         "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC LIMIT ?",
         [user_id] + extra + [limit],
     ).fetchall()
@@ -74,7 +76,9 @@ def get_category_breakdown(user_id, start_date=None, end_date=None):
     clause, extra = _date_filter_clause(start_date, end_date)
     rows = conn.execute(
         "SELECT category, SUM(amount) AS total FROM expenses "
-        "WHERE user_id = ?" + clause + " GROUP BY category ORDER BY total DESC, category ASC",
+        "WHERE user_id = ?"
+        + clause
+        + " GROUP BY category ORDER BY total DESC, category ASC",
         [user_id] + extra,
     ).fetchall()
     conn.close()
@@ -100,6 +104,30 @@ def insert_expense(user_id, amount, category, date, description):
     conn.execute(
         "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
         (user_id, amount, category, date, description),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_expense_by_id(expense_id, user_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, user_id),
+    ).fetchone()
+    conn.close()
+
+    if row is None:
+        return None
+    return dict(row)
+
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    conn = get_db()
+    conn.execute(
+        "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? "
+        "WHERE id = ? AND user_id = ?",
+        (amount, category, date, description, expense_id, user_id),
     )
     conn.commit()
     conn.close()
